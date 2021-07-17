@@ -84,6 +84,7 @@
 ;; PACKAGES
 ;; --------------------------------------------------------------------------------------------
 (require 'subr-x)
+(require 'helm-config)
 
 (use-package all-the-icons)
 
@@ -127,7 +128,9 @@
   :ensure t
   :bind (
 	 ("<f7>"  . projectile-add-known-project)
-	 ))
+	 )
+  :init
+  (projectile-mode 1))
 
 (use-package treemacs
   :ensure t
@@ -169,7 +172,10 @@
 	  ("C-x r b" . helm-filtered-bookmarks)
 	  )
   :custom
-  (helm-position 'bottom))
+  (helm-position 'bottom)
+  :init 
+  (helm-mode 1)
+  (helm-autoresize-mode 1))
 
 (use-package helm-swoop
   :ensure t
@@ -282,7 +288,7 @@
 ;; MINIMAP
 (defun my-minibuffer-setup ()
        (set (make-local-variable 'face-remapping-alist)
-          '((default :height 1.5))))
+          '((default :height 1.3))))
 
 (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
 
@@ -299,15 +305,12 @@
 (delete-selection-mode 1)
 
 (column-number-mode 1)
-(linum-mode 1)
-(projectile-mode 1)
-(helm-mode 1)
-(helm-autoresize-mode 1)
 
 (setq-default show-trailing-whitespace 1)
 (setq-default explicit-shell-file-name "/bin/bash")
 
 ;; full screen
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 
 (message "... finished reading ~/.emacs.d/init.el")
