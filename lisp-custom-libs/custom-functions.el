@@ -55,12 +55,46 @@ there's a region, all lines that region covers will be duplicated."
 
 (setq-default explicit-shell-file-name "/bin/bash")
 
-(defun my/term ()
+(defun my-term ()
   "My personal term command."
   (interactive)
   (set-buffer (make-term "terminal" explicit-shell-file-name))
   (term-mode)
   (term-char-mode)
   (switch-to-buffer "*terminal*"))
+
+(defun my-org-mode-setup ()
+  (interactive)
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  ;; Enable text wrapping in org-mode (it looks better when side piddings enbaled)
+  (visual-line-mode 1))
+
+(defun my-org-font-setup ()
+  (interactive)
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
+
+
+(defun my-org-mode-visual-fill ()
+  "Function imposes left and right side paddings in org-mode"
+  (interactive)
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(defun my-set-org-agenda ()
+  "Sets all agenda files for org-mode"
+  (interactive)
+  (setq org-agenda-files
+  '("~/projects/pusch/org/agenda.org")))
+
+(defun my-set-org-tutorial-agenda ()
+  (interactive)
+  (setq org-agenda-files
+  '(;;"~/projects/pusch//org/placeholder.org"
+    "~/programming/org/tutorial/tips.org")))
 
 (provide 'custom-functions)

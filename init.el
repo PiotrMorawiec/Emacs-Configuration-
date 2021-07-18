@@ -14,6 +14,12 @@
 ;; list-colors-display
 ;; list-faces-display
 ;;
+;; describe-face
+;; describe-variable (C-h v) - description & value of a variable
+;; describe-key (C-h c)
+;; describe-function (C-h f)
+;;
+;; find-variable - usefull for e.g. finding a map (keymap) for given mode)
 ;; --------------------------------------------------------------------------------------------
 
 (message "Start reading ~/.emacs.d/init.el ...")
@@ -111,14 +117,32 @@
 ;;   :bind ("M-x" . smex))
 
 (use-package org
-  :ensure t)
+  :ensure t
+  :config
+  (setq org-ellipsis " ▾")
 
-;; This package will replace asterisk's in org-mode to fancy bullet's icons
+  ;; start org-agenda in log-mode by default (like if 'a' option was chosen)
+  (setq org-agenda-start-with-log-mode t)
+  ;; whenever task is DONE - add information (log) about when the tash has been finished
+  (setq org-log-done 'time)
+  (setq org-log-into-drawer t)
+
+  (my-org-font-setup)
+  (my-set-org-agenda))
+
 (use-package org-bullets
+  :ensure t
   :after org
-  :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+;; this package enables org notifications on your OS desktop
+(use-package org-wild-notifier
+  :ensure t)
+
+;; Package that allows left/right side padding in org mode
+(use-package visual-fill-column
+	:defer t)
 
 (use-package magit
   :ensure t
@@ -173,7 +197,7 @@
 	  )
   :custom
   (helm-position 'bottom)
-  :init 
+  :init
   (helm-mode 1)
   (helm-autoresize-mode 1))
 
@@ -258,6 +282,8 @@
 (global-set-key (kbd "C-c d")     'duplicate-current-line-or-region)
 (global-set-key (kbd "C-c k")     'kill-whole-line)
 (global-set-key (kbd "C-c x")     'delete-trailing-whitespace)
+(global-set-key (kbd "C-c C-e")   'eval-region)
+(global-set-key (kbd "C-c C-g")   'org-agenda-list)
 
 (define-key helm-map (kbd "TAB")   #'helm-execute-persistent-action)
 (define-key helm-map (kbd "<tab>") #'helm-execute-persistent-action)
@@ -265,6 +291,10 @@
 
 (define-key org-mode-map (kbd "C-x C-z")  #'outline-hide-entry)
 (define-key org-mode-map (kbd "C-x C-a")  #'outline-hide-body)
+(define-key org-mode-map (kbd "C-x C-n")  #'outline-next-heading)
+(define-key org-mode-map (kbd "C-x C-p")  #'outline-prev-heading)
+
+(define-key org-agenda-mode-map (kbd "m")  #'org-agenda-month-view)
 
 ;; --------------------------------------------------------------------------------------------
 ;; HOOKS
@@ -276,7 +306,9 @@
 (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
 
 ;; ORG
-; (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+(add-hook 'org-mode-hook #'my-org-mode-setup)
+(add-hook 'org-mode-hook #'org-bullets-mode)
+(add-hook 'org-mode-hook #'my-org-mode-visual-fill)
 
 ;; POST COMMAND
 ; (add-hook 'post-command-hook 'toggle-highlight-region-duplicates)
@@ -285,7 +317,7 @@
 (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
 ; (setq xref-show-definitions-function #'xref-show-definitions-completing-read)
 
-;; MINIMAP
+;; MINIBUFFER
 (defun my-minibuffer-setup ()
        (set (make-local-variable 'face-remapping-alist)
           '((default :height 1.3))))
@@ -295,6 +327,32 @@
 ;; --------------------------------------------------------------------------------------------
 ;; OTHER SETTINGS
 ;; --------------------------------------------------------------------------------------------
+
+; (set-face-attribute 'default nil :font "Fira Code Retina" :height default-font-size)
+
+; ;; Set the fixed pitch face
+; (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height 260)
+
+; ;; Set the variable pitch face
+; (set-face-attribute 'variable-pitch nil :font "Cantarell" :height 295 :weight 'regular)
+
+(dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1))))
+
+ ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
 
 (set-face-attribute 'default nil :height 120)
 
@@ -312,5 +370,9 @@
 ;; full screen
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
+
+;; mouse behaviour
+;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
+(setq mouse-wheel-progressive-speed nil)
 
 (message "... finished reading ~/.emacs.d/init.el")
