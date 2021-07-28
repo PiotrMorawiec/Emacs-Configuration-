@@ -4,7 +4,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(helm-rg helm-ag rg ag org-wild-notifier visual-fill-column viaual-fill-column all-the-icons helm-swoop dumb-jump helm-icons org-bullets treemacs-magit treemacs-icons-dired treemacs-projectile spacemacs-theme drag-stuff highlight-indent-guides paredit gnu-elpa-keyring-update helm-occur helm-projectile ht auto-complete minimap projectile treemacs helm magit gruvbox-theme use-package)))
+   '(doom-modeline treemacs-all-the-icons helm-smex helm-rg helm-ag rg ag org-wild-notifier visual-fill-column viaual-fill-column all-the-icons helm-swoop dumb-jump helm-icons org-bullets treemacs-magit treemacs-icons-dired treemacs-projectile spacemacs-theme drag-stuff highlight-indent-guides paredit gnu-elpa-keyring-update helm-occur helm-projectile ht auto-complete minimap projectile treemacs helm magit gruvbox-theme use-package)))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.

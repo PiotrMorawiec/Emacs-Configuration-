@@ -20,6 +20,18 @@
 ;; describe-function (C-h f)
 ;;
 ;; find-variable - usefull for e.g. finding a map (keymap) for given mode)
+;;
+;; helm-porjectile-grep
+;; project-find-regexp
+;; projectile-replace
+;; projectile-replace-regexp
+;; find-grep-dired        - searches for files, containing given regexp, in given directory
+;;
+;; projectile-ag (requires ag)
+;; helm-ag
+;;
+;;
+;; tabify / untabify - replaces all SPC's with TAB's and the other way around (applies to active region)
 ;; --------------------------------------------------------------------------------------------
 
 (message "Start reading ~/.emacs.d/init.el ...")
@@ -58,8 +70,13 @@
 (add-to-list 'package-archives '("melpa"        . "https://melpa.org/packages/")        t)
 (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
 
+;; Load Emacs Lisp packages, and activate them - variable ‘package-load-list’ controls which packages to load.
 (package-initialize)
-(package-refresh-contents)
+
+;; Update list of available packages - sth like 'git fetch'
+;; doing it together with 'unless' reduces emacs startup time significantly
+(unless package-archive-contents
+  (package-refresh-contents))
 
 (when (not (package-installed-p 'use-package))
 	(package-install 'use-package))
@@ -83,16 +100,27 @@
 ; 	:ensure t
 ;   :init (load-theme 'gruvbox-dark-soft t))
 
-; (use-package doom-themes
-;   :init (load-theme 'doom-dracula t))
-
 ;; --------------------------------------------------------------------------------------------
 ;; PACKAGES
 ;; --------------------------------------------------------------------------------------------
 (require 'subr-x)
 (require 'helm-config)
 
-(use-package all-the-icons)
+;; Load Silver Searcher
+(use-package ag
+  :ensure t)
+
+;; Load ripgrep
+(use-package rg
+  :ensure t)
+
+(use-package all-the-icons
+  :ensure t)
+
+(use-package doom-modeline
+  :after (all-the-icons)
+  :ensure t
+  :init (doom-modeline-mode 1))
 
 (use-package auto-complete
   :ensure t
@@ -106,15 +134,6 @@
 	recentf-save-file (concat user-emacs-directory ".recentf"))
   (recentf-mode t)
   :diminish nil)
-
-;; (use-package smex
-;;   :ensure t
-;;   ;; Using counsel-M-x for now. Remove this permanently if counsel-M-x works better.
-;;   :disabled t
-;;   :config
-;;   (setq smex-save-file (concat user-emacs-directory ".smex-items"))
-;;   (smex-initialize)
-;;   :bind ("M-x" . smex))
 
 (use-package org
   :ensure t
@@ -142,7 +161,7 @@
 
 ;; Package that allows left/right side padding in org mode
 (use-package visual-fill-column
-	:defer t)
+  :defer t)
 
 (use-package magit
   :ensure t
@@ -163,7 +182,7 @@
 	 ("<f6>" . treemacs-add-project-to-workspace)
 	 )
   :config
-  (treemacs-follow-mode -1)
+  (treemacs-follow-mode t)
   (treemacs-git-mode 'deferred))
 
 
@@ -182,9 +201,21 @@
 
 (use-package helm-icons
   :ensure t
-  :after (treemacs helm)
+  ;; :after (treemacs all-the-icons helm)
+  ;; :after (helm)
+  :after (all-the-icons helm)
+  ;; :after (treemacs)
+  :custom
+  (helm-icons-provider 'all-the-icons)
   :config
   (helm-icons-enable))
+
+(use-package treemacs-all-the-icons
+  :ensure t
+  :after (treemacs all-the-icons))
+
+(use-package helm-ag
+  :ensure t)
 
 (use-package helm
   :ensure t
@@ -217,6 +248,20 @@
 	 )))
 
 
+(use-package smex
+  :ensure t)
+  ;; ;; Using counsel-M-x for now. Remove this permanently if counsel-M-x works better.
+  ;; :disabled t
+  ;; :config
+  ;; (setq smex-save-file (concat user-emacs-directory ".smex-items"))
+  ;; (smex-initialize))
+  ;; :bind ("M-x" . smex))
+
+(use-package helm-smex
+  :ensure t
+  :after (helm smex)
+  )
+
 (use-package minimap
   :ensure t
   :custom
@@ -235,8 +280,20 @@
   :config
   (minimap-mode -1))
 
-(use-package verilog-mode
-  :ensure t)
+ (use-package verilog-mode
+   :ensure t
+   :custom
+   (verilog-align-ifelse t)
+   (verilog-auto-delete-trailing-whitespace t)
+   (verilog-auto-indent-on-newline t)
+   (verilog-auto-newline nil)
+   (verilog-highlight-grouping-keywords t)
+   (verilog-highlight-modules t)
+   (verilog-indent-level 2)
+   (verilog-indent-level-behavioral 2)
+   (verilog-indent-level-declaration 2)
+   (verilog-indent-level-directive 0)
+   (verilog-indent-level-module 2))
 
 (use-package paredit
   :ensure t
@@ -285,9 +342,16 @@
 (global-set-key (kbd "C-c C-e")   'eval-region)
 (global-set-key (kbd "C-c C-g")   'org-agenda-list)
 
+(global-set-key (kbd "C-x p r")    #'helm-projectile-recentf)
+(global-set-key (kbd "C-x p R")    #'projectile-replace)
+(global-set-key (kbd "C-x p x")    #'projectile-replace-regexp)
+
 (define-key helm-map (kbd "TAB")   #'helm-execute-persistent-action)
 (define-key helm-map (kbd "<tab>") #'helm-execute-persistent-action)
 (define-key helm-map (kbd "C-z")   #'helm-select-action)
+
+(global-set-key (kbd "C-,")   #'helm-projectile-grep)
+(global-set-key (kbd "C-.")   #'helm-projectile-ag)
 
 (define-key org-mode-map (kbd "C-x C-z")  #'outline-hide-entry)
 (define-key org-mode-map (kbd "C-x C-a")  #'outline-hide-body)
@@ -295,6 +359,10 @@
 (define-key org-mode-map (kbd "C-x C-p")  #'outline-prev-heading)
 
 (define-key org-agenda-mode-map (kbd "m")  #'org-agenda-month-view)
+
+
+;; (global-set-key [remap execute-extended-command] #'helm-smex)
+;; (global-set-key (kbd "M-X") #'helm-smex-major-mode-commands)
 
 ;; --------------------------------------------------------------------------------------------
 ;; HOOKS
@@ -315,12 +383,12 @@
 
 ;; XREF
 (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
-; (setq xref-show-definitions-function #'xref-show-definitions-completing-read)
 
 ;; MINIBUFFER
 (defun my-minibuffer-setup ()
-       (set (make-local-variable 'face-remapping-alist)
-          '((default :height 1.3))))
+  "Function sets minibuffer font larger"
+  (set (make-local-variable 'face-remapping-alist)
+       '((default :height 1.3))))
 
 (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
 
@@ -337,22 +405,22 @@
 ; (set-face-attribute 'variable-pitch nil :font "Cantarell" :height 295 :weight 'regular)
 
 (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1))))
+                (org-level-2 . 1.1)
+                (org-level-3 . 1.05)
+                (org-level-4 . 1.0)
+                (org-level-5 . 1.1)
+                (org-level-6 . 1.1)
+                (org-level-7 . 1.1)
+                (org-level-8 . 1.1))))
 
- ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+;; Ensure that anything that should be fixed-pitch in Org files appears that way
+(set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+(set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+(set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+(set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+(set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+(set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+(set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
 
 (set-face-attribute 'default nil :height 120)
 
@@ -361,7 +429,6 @@
 
 (blink-cursor-mode 1)
 (delete-selection-mode 1)
-
 (column-number-mode 1)
 
 (setq-default show-trailing-whitespace 1)
@@ -369,7 +436,6 @@
 
 ;; full screen
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
-
 
 ;; mouse behaviour
 ;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
