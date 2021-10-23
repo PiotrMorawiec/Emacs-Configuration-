@@ -44,11 +44,20 @@ there's a region, all lines that region covers will be duplicated."
 (defun toggle-highlight-trailing-whitespaces ()
   "Function toggles highlighting trailing whitespaces"
   (interactive)
-  (if (= show-trailing-whitespace 1)
+  (if (bound-and-true-p show-trailing-whitespace)
       (progn  (message "Disable highlighting of trailing whitespaces")
               (setq-default show-trailing-whitespace nil))
   (progn (message "Enable highlighting of trailing whitespaces")
-         (setq-default show-trailing-whitespace 1))))
+         (setq-default show-trailing-whitespace t))))
+
+(defun toggle-idle-highlight-mode ()
+  "Function toggles 'idle-highlight-mode'"
+  (interactive)
+  (if (bound-and-true-p dle-highlight-mode)
+      (progn  (message "Disable 'idle-highlight-mode'")
+              (setq-default idle-highlight-mode nil))
+  (progn (message "Enable 'idle-highlight-mode'")
+         (setq-default idle-highlight-mode t))))
 
 (defun which-active-modes ()
   "Give a message of which minor modes are enabled in the current buffer."
@@ -117,5 +126,59 @@ there's a region, all lines that region covers will be duplicated."
   (interactive)
   (find-file "~/.emacs.d/init.el")
   (message "Init file opened"))
+
+;; Function copied from Emacs Wiki (https://www.emacswiki.org/emacs/KillingBuffers)
+(defun close-and-kill-this-pane ()
+  "If there are multiple windows, then close this pane and kill the buffer in it also."
+  (interactive)
+  (kill-this-buffer)
+  (if (not (one-window-p))
+      (delete-window)))
+
+;; Function copied from Emacs Wiki (https://www.emacswiki.org/emacs/KillingBuffers)
+(defun close-and-kill-next-pane ()
+  "If there are multiple windows, then close the other pane and kill the buffer in it also."
+  (interactive)
+  (other-window 1)
+  (kill-this-buffer)
+  (if (not (one-window-p))
+      (delete-window)))
+
+(defun other-window-kill-buffer ()
+  "Function woks when there are multiple windows opened in the current frame.
+   Kills the currently opened buffer in all the other windows"
+  (interactive)
+  ;; Window selection is used because point goes to a different window
+  ;; if more than 2 windows are present
+  (let ((win-curr (selected-window))
+        (win-other (next-window)))
+    (select-window win-other)
+    (kill-this-buffer)
+    (select-window win-curr)))
+
+(defun kill-other-buffers ()
+  "Kill all other buffers except the active buffer."
+  (interactive)
+  (mapc 'kill-buffer
+        (delq (current-buffer) (buffer-list))))
+
+;; TODO: prevent function from removing *Messages buffer
+;; https://stackoverflow.com/questions/1687620/regex-match-everything-but-specific-pattern
+(defun kill-asterisk-buffers ()
+  "Kill all buffers whose names start with an asterisk (‘*’).
+   By convention, those buffers are not associated with files."
+  (interactive)
+  (kill-matching-buffers "*" nil t)
+  (message "All asterisk (*) buffers have been killed"))
+
+(defun package-reinstall-all-activated-packages ()
+  "Refresh and reinstall all activated packages."
+  (interactive)
+  (package-refresh-contents)
+  (dolist (package-name package-activated-list)
+    (when (package-installed-p package-name)
+      (unless (ignore-errors                   ;some packages may fail to install
+                (package-reinstall package-name))
+        (warn "Package %s failed to reinstall" package-name)))))
 
 (provide 'custom-functions)

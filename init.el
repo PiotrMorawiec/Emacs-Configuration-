@@ -15,6 +15,8 @@
 ;; USEFULL FUNCTIONS
 ;; --------------------------------------------------------------------------------------------
 ;;
+;; apropos
+;;
 ;; list-colors-display
 ;; list-faces-display
 ;;
@@ -109,6 +111,16 @@
 (require 'subr-x)
 (require 'helm-config)
 
+(use-package highlight-symbol
+  :ensure t)
+
+(use-package idle-highlight-mode
+  :ensure t
+  :custom
+  (idle-highlight-idle-time 0.1)
+  :hook
+  ((prog-mode text-mode) . idle-highlight-mode))
+
 ;; Load Silver Searcher
 (use-package ag
   :ensure t)
@@ -135,8 +147,10 @@
   :init (doom-modeline-mode 1)
   :config
   (setq doom-modeline-project-detection 'auto
-        doom-modeline-height 40
-        display-battery-mode t))
+        doom-modeline-height 40)
+  :custom
+  (display-battery-mode t))
+
 
 (use-package auto-complete
   :ensure t
@@ -253,7 +267,7 @@
   :bind  (("M-x"     . helm-M-x)
           ("M-y"     . helm-show-kill-ring)
           ("C-x C-f" . helm-find-files)
-          ("C-x b"   . helm-buffers-list)
+          ("C-b"     . helm-buffers-list)
           ("C-x c o" . helm-occur)
           ("C-x r b" . helm-filtered-bookmarks)
           )
@@ -313,6 +327,7 @@
   (minimap-window-location (quote right))
   :custom-face
   (minimap-active-region-background ((((background dark)) (:background "#3c3c3c" :extend t)) (t (:background "#C847D8FEFFFF" :extend t))))
+  (minimap-font-face ((t (:weight bold :height 15 :width normal :family "DejaVu Sans Mono"))))
   :config
   (minimap-mode -1))
 
@@ -331,22 +346,23 @@
    (verilog-indent-level-directive 0)
    (verilog-indent-level-module 2))
 
-;; (use-package paredit
-;;   :ensure t
-;;   :init
-;;   (add-hook 'clojure-mode-hook #'enable-paredit-mode)
-;;   (add-hook 'cider-repl-mode-hook #'enable-paredit-mode)
-;;   (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
-;;   (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-;;   (add-hook 'ielm-mode-hook #'enable-paredit-mode)
-;;   (add-hook 'lisp-mode-hook #'enable-paredit-mode)
-;;   (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-;;   (add-hook 'scheme-mode-hook #'enable-paredit-mode)
-;;   :config
-;;   (show-paren-mode t)
-;;   :bind (("M-[" . paredit-wrap-square)
-;;       ("M-{" . paredit-wrap-curly))
-;;   :diminish nil)
+(use-package paredit
+  :ensure t
+  :init
+  (add-hook 'clojure-mode-hook #'enable-paredit-mode)
+  (add-hook 'cider-repl-mode-hook #'enable-paredit-mode)
+  (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+  (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+  (add-hook 'ielm-mode-hook #'enable-paredit-mode)
+  (add-hook 'lisp-mode-hook #'enable-paredit-mode)
+  (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+  (add-hook 'scheme-mode-hook #'enable-paredit-mode)
+  :config
+  (show-paren-mode t)
+  (paredit-mode nil)
+  :bind (("M-[" . paredit-wrap-square)
+      ("M-{" . paredit-wrap-curly))
+  :diminish nil)
 
 (use-package highlight-indent-guides
   :ensure t
@@ -367,19 +383,22 @@
 (global-set-key (kbd "C-v")        #'scroll-half-page-up)
 
 (global-set-key (kbd "<f5>")       #'revert-buffer)
+(global-set-key (kbd "<f6>")       #'kill-asterisk-buffers)
 (global-set-key (kbd "<f9>")       #'minimap-mode)
 (global-set-key (kbd "<f12>")      #'xref-find-definitions)
 
 (global-set-key (kbd "<prior>")    #'drag-stuff-up)
 (global-set-key (kbd "<next>")     #'drag-stuff-down)
 
+(global-set-key (kbd "C-x 0")      #'kill-buffer-and-window)
 (global-set-key (kbd "C-c d")      #'duplicate-current-line-or-region)
 (global-set-key (kbd "C-c k")      #'kill-whole-line)
 (global-set-key (kbd "C-c x")      #'delete-trailing-whitespace)
 (global-set-key (kbd "C-c w")      #'toggle-highlight-trailing-whitespaces)
+(global-set-key (kbd "C-c h")      #'toggle-idle-highlight-mode)
 (global-set-key (kbd "C-c C-e")    #'eval-region)
 (global-set-key (kbd "C-c C-,")    #'org-agenda-list)
-(global-set-key (kbd "C-c TAB")    #'my-untabify-entire-buffer)
+(global-set-key (kbd "C-c t")      #'my-untabify-entire-buffer)
 (global-set-key (kbd "C-c i")      #'my-open-init-file)
 
 (global-set-key (kbd "C-x p r")    #'helm-projectile-recentf)
@@ -408,6 +427,9 @@
 
 ;; --------------------------------------------------------------------------------------------
 ;; HOOKS
+;;
+;; List of emacs hooks:
+;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Standard-Hooks.html
 ;; --------------------------------------------------------------------------------------------
 
 ;; PROG
@@ -421,7 +443,11 @@
 (add-hook 'org-mode-hook #'my-org-mode-visual-fill)
 
 ;; POST COMMAND
-; (add-hook 'post-command-hook 'toggle-highlight-region-duplicates)
+;; (add-hook 'post-command-hook #'highlight-syntax-duplicates)
+
+;; KILL BUFFER / QUIT WINDOW
+;; (add-hook 'kill-buffer-hook <fun>)
+;; (add-hook 'quit-window-hook <fun>)
 
 ;; XREF
 (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
@@ -507,5 +533,27 @@
  'org-babel-load-languages
  '((python . t)
    (emacs-lisp . t)))
+
+;; Set Babel to use Python 3
+(setq org-babel-python-command "python3")
+
+;; Example from Babel Introduction
+;; (setq org-babel-default-header-args
+;;       (cons '(:noweb . "yes")
+;;             (assq-delete-all :noweb org-babel-default-header-args)))
+
+;; Fundamental functions
+;; In Lisp, car, cdr, and cons are fundamental functions.
+;; The cons function is used to construct lists, and the car and cdr functions are used to take them apart.
+;; Source: https://www.gnu.org/software/emacs/manual/html_node/eintr/car-cdr-_0026-cons.html
+
+;; (car '(a b c))
+;; (cdr '(a b c))
+;; (nthcdr 2 '(pine fir oak maple))
+;; (nthcdr 4 '(pine fir oak maple))
+;; (cons 'a '(c d))
+;; (cons '(a b) '(c d))
+;; (setq mylist (cons '(add) '(to list)))
+;; (assq-delete-all 'add mylist)
 
 (message "... finished reading ~/.emacs.d/init.el")
