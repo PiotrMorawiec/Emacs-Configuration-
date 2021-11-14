@@ -1,39 +1,3 @@
-;; --------------------------------------------------------------------------------------------
-;;TODO
-;; --------------------------------------------------------------------------------------------
-;; * zrobić coś żeby emacs nie oteiral kazdego polecenia (np helm) w nowym buforze
-;; * poprawić performance - spowolnienia są wprowadzane w znaczej mierzez przez GC (Garbage Collection)
-;; * performance - timer (jest wprowadzany przez minimap)
-;;
-;; - helm-swoop issue:
-;;    https://github.com/Alexander-Miller/treemacs/issues/343
-;;    'shackle' package
-;;    'popwin' - used by spacemacs
-;; --------------------------------------------------------------------------------------------
-
-;; --------------------------------------------------------------------------------------------
-;; USEFULL FUNCTIONS
-;; --------------------------------------------------------------------------------------------
-;;
-;; apropos
-;;
-;; list-colors-display
-;; list-faces-display
-;;
-;; describe-face
-;; describe-variable (C-h v) - description & value of a variable
-;; describe-key (C-h c)
-;; describe-function (C-h f)
-;;
-;; find-variable - usefull for e.g. finding a map (keymap) for given mode)
-;;
-;; helm-porjectile-grep
-;; project-find-regexp
-;; projectile-replace
-;; projectile-replace-regexp
-;; find-grep-dired        - searches for files, containing given regexp, in given directory
-;;
-;; --------------------------------------------------------------------------------------------
 
 (message "Start reading ~/.emacs.d/init.el ...")
 
@@ -62,8 +26,19 @@
 ;; proactively.
 (load-file custom-file)
 
-(add-to-list 'load-path "~/.emacs.d/lisp-custom-libs")
+;; Load custom Emacs Lisp files (libs, functions, etc.)
+(add-to-list 'load-path "~/.emacs.d/custom/")
 (require 'custom-functions)
+
+;; --------------------------------------------------------------------------------------------
+;; SETUP PROXY SERVICES
+;; --------------------------------------------------------------------------------------------
+(setq url-proxy-services
+   '(("no_proxy" . "^\\(localhost\\|10\\..*\\|192\\.168\\..*\\)")
+     ("http" . "10.158.100.2:8080")
+     ("https" . "10.158.100.2:8080")))
+
+(setq url-proxy-services nil)
 
 ;; --------------------------------------------------------------------------------------------
 ;; SETUP PACKAGE REPOSITORIES
@@ -151,6 +126,18 @@
   :custom
   (display-battery-mode t))
 
+(use-package keycast
+  :config
+  ;; This works with doom-modeline, inspired by this comment:
+  ;; https://github.com/tarsius/keycast/issues/7#issuecomment-627604064
+  (define-minor-mode keycast-mode
+    "Show current command and its key binding in the mode line."
+    :global t
+    (if keycast-mode
+	(add-hook 'pre-command-hook 'keycast--update t)
+      (remove-hook 'pre-command-hook 'keycast--update)))
+  (add-to-list 'global-mode-string '("" mode-line-keycast " "))
+  (keycast-mode))
 
 (use-package auto-complete
   :ensure t
@@ -188,6 +175,41 @@
 ;; this package enables org notifications on your OS desktop
 (use-package org-wild-notifier
   :ensure t)
+
+(use-package org-roam
+  :ensure t
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/org_roam_database")
+  (org-roam-completion-everywhere t)
+  (org-roam-capture-templates
+   '(("d" "default" plain
+      "%?"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("m" "meeting" plain
+      (file "~/org_roam_database/templates/meeting_template.org")
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+      :unnarrowed t)
+     ("w" "words" plain
+      (file "~/org_roam_database/templates/words_template.org")
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+      :unnarrowed t)
+     ))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+	 ("C-c n f" . org-roam-node-find)
+	 ("C-c n i" . org-roam-node-insert)
+	 :map org-mode-map
+	 ("C-M-i" . completion-at-point)
+	 :map org-roam-dailies-map
+         ("Y" . org-roam-dailies-capture-yesterday)
+         ("T" . org-roam-dailies-capture-tomorrow))
+  :bind-keymap
+  ("C-c n d" . org-roam-dailies-map)
+  :config
+  (require 'org-roam-dailies) ;; Ensure the keymap "org-roam-dailies-map" is available
+  (org-roam-db-autosync-mode))
 
 ;; Package that allows left/right side padding in org mode
 (use-package visual-fill-column
@@ -399,7 +421,10 @@
 (global-set-key (kbd "C-c C-e")    #'eval-region)
 (global-set-key (kbd "C-c C-,")    #'org-agenda-list)
 (global-set-key (kbd "C-c t")      #'my-untabify-entire-buffer)
-(global-set-key (kbd "C-c i")      #'my-open-init-file)
+
+(global-set-key (kbd "C-c o i")    #'my-open-init-file)
+(global-set-key (kbd "C-c o f")    #'my-open-custom-functions-file)
+(global-set-key (kbd "C-c o c")    #'my-open-customization-file)
 
 (global-set-key (kbd "C-x p r")    #'helm-projectile-recentf)
 (global-set-key (kbd "C-x p R")    #'projectile-replace)
@@ -525,6 +550,10 @@
                (:strike-through t))
               )))
 
+;; Tramp issues explanation (solution works !):
+;;   https://emacs.stackexchange.com/questions/24159/tramp-waiting-for-prompts-from-remote-shell
+;; (setq tramp-shell-prompt-pattern "^[^$>\n]*[#$%>] *\\(\[[0-9;]*[a-zA-Z] *\\)*")
+
 ;; --------------------------------------------------------------------------------------------
 ;; BABEL SETTINGS
 ;; --------------------------------------------------------------------------------------------
@@ -532,6 +561,7 @@
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((python . t)
+   (octave . t)
    (emacs-lisp . t)))
 
 ;; Set Babel to use Python 3

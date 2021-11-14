@@ -127,6 +127,17 @@ there's a region, all lines that region covers will be duplicated."
   (find-file "~/.emacs.d/init.el")
   (message "Init file opened"))
 
+(defun my-open-customization-file ()
+  (interactive)
+  (find-file "~/.emacs.d/customization.org")
+  (message "Customization file opened"))
+
+(defun my-open-custom-functions-file ()
+  (interactive)
+  (find-file "~/.emacs.d/lisp-custom-libs/init.el")
+  (message "Init file opened"))
+
+
 ;; Function copied from Emacs Wiki (https://www.emacswiki.org/emacs/KillingBuffers)
 (defun close-and-kill-this-pane ()
   "If there are multiple windows, then close this pane and kill the buffer in it also."
