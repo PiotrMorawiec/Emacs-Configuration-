@@ -1,4 +1,6 @@
 
+;; -*- lexical-binding: t; -*-
+
 (message "Start reading ~/.emacs.d/init.el ...")
 
 ;; --------------------------------------------------------------------------------------------
@@ -163,8 +165,7 @@
   (setq org-log-done 'time)
   (setq org-log-into-drawer t)
 
-  (my-org-font-setup)
-  (my-set-org-agenda))
+  (my-org-font-setup))
 
 (use-package org-bullets
   :ensure t
@@ -192,8 +193,16 @@
       (file "~/org_roam_database/templates/meeting_template.org")
       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
       :unnarrowed t)
-     ("w" "words" plain
+     ("e" "words" plain
       (file "~/org_roam_database/templates/words_template.org")
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+      :unnarrowed t)
+     ("p" "private agenda" plain
+      (file "~/org_roam_database/templates/private_agenda_template.org")
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+      :unnarrowed t)
+     ("w" "work agenda" plain
+      (file "~/org_roam_database/templates/work_agenda_template.org")
       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
       :unnarrowed t)
      ))
@@ -204,12 +213,46 @@
 	 ("C-M-i" . completion-at-point)
 	 :map org-roam-dailies-map
          ("Y" . org-roam-dailies-capture-yesterday)
-         ("T" . org-roam-dailies-capture-tomorrow))
+         ("T" . org-roam-dailies-capture-tomorrow)
+         ("I" . org-roam-node-insert-immediate))
   :bind-keymap
   ("C-c n d" . org-roam-dailies-map)
   :config
   (require 'org-roam-dailies) ;; Ensure the keymap "org-roam-dailies-map" is available
   (org-roam-db-autosync-mode))
+
+
+(defun org-roam-node-insert-immediate (arg &rest args)
+  "Function allows to onsert/link a new note without the necessity of filling this note at the moment,
+   so you can go back later and fill those notes in with more details"
+  (interactive "P")
+  (let ((args (cons arg args))
+        (org-roam-capture-templates (list (append (car org-roam-capture-templates)
+                                                  '(:immediate-finish t)))))
+    (apply #'org-roam-node-insert args)))
+
+(defun my-org-roam-filter-by-tag (tag-name)
+  "Function filters Org Roam files by given tag.
+   Tags are specified in Org Roam files in '#+filetags:' section."
+  (lambda (node)
+    (member tag-name (org-roam-node-tags node))))
+
+(defun my-org-roam-list-notes-by-tag (tag-name)
+  "Function returns list composed of all Org Roam files, containing given tag" 
+  (interactive)
+  (mapcar #'org-roam-node-file
+          (seq-filter
+           (my-org-roam-filter-by-tag tag-name)
+           (org-roam-node-list))))
+
+(defun my-org-roam-refresh-agenda-list ()
+  (interactive)
+  (require 'org-roam)
+  (setq org-agenda-files (append (my-org-roam-list-notes-by-tag "work_agenda")
+				 (my-org-roam-list-notes-by-tag "private_agenda"))))
+
+;; Build the agenda list the first time for the session
+(my-org-roam-refresh-agenda-list)
 
 ;; Package that allows left/right side padding in org mode
 (use-package visual-fill-column
@@ -381,7 +424,7 @@
   (add-hook 'scheme-mode-hook #'enable-paredit-mode)
   :config
   (show-paren-mode t)
-  (paredit-mode nil)
+  (paredit-mode t)
   :bind (("M-[" . paredit-wrap-square)
       ("M-{" . paredit-wrap-curly))
   :diminish nil)
@@ -419,12 +462,12 @@
 (global-set-key (kbd "C-c w")      #'toggle-highlight-trailing-whitespaces)
 (global-set-key (kbd "C-c h")      #'toggle-idle-highlight-mode)
 (global-set-key (kbd "C-c C-e")    #'eval-region)
-(global-set-key (kbd "C-c C-,")    #'org-agenda-list)
 (global-set-key (kbd "C-c t")      #'my-untabify-entire-buffer)
 
 (global-set-key (kbd "C-c o i")    #'my-open-init-file)
 (global-set-key (kbd "C-c o f")    #'my-open-custom-functions-file)
 (global-set-key (kbd "C-c o c")    #'my-open-customization-file)
+(global-set-key (kbd "C-c o a")    #'org-agenda-list)
 
 (global-set-key (kbd "C-x p r")    #'helm-projectile-recentf)
 (global-set-key (kbd "C-x p R")    #'projectile-replace)
@@ -587,3 +630,4 @@
 ;; (assq-delete-all 'add mylist)
 
 (message "... finished reading ~/.emacs.d/init.el")
+
